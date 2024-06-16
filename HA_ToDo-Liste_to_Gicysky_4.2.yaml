@@ -1,0 +1,74 @@
+alias: Notify - Todo-List
+description: ""
+trigger:
+  - platform: state
+    entity_id:
+      - todo.household
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 15
+condition: []
+action:
+  - service: todo.remove_completed_items
+    target:
+      entity_id: todo.household
+    data: {}
+  - service: todo.get_items
+    target:
+      entity_id:
+        - todo.household
+      device_id: []
+      area_id: []
+    data:
+      status: needs_action
+    response_variable: household
+  - service: input_text.set_value
+    target:
+      entity_id: input_text.todo_helper
+    data:
+      value: |
+        {{
+          household["todo.household"]["items"]
+          | map(attribute='summary')
+          | join('|')
+          | trim
+        }}
+  - service: open_epaper_link.drawcustom
+    target:
+      entity_id:
+        - open_epaper_link.XXXXXXXXXXXXX
+    data:
+      background: white
+      rotate: 90
+      payload:
+        - type: text
+          value: Todo
+          font: ppb.ttf
+          x: 100
+          "y": 5
+          size: 30
+          color: black
+        - type: multiline
+          value: "{{ states('input_text.todo_helper') }}"
+          delimiter: "|"
+          font: ppb.ttf
+          offset_y: 28
+          x: 10
+          size: 16
+          color: black
+          start_y: 60
+        - type: icon
+          value: checkbox-marked-circle-auto-outline
+          x: 240
+          "y": 5
+          size: 60
+          color: black
+        - type: text
+          value: "Last Update: {{ now().strftime('%d.%m %H:%M') }}"
+          font: ppb.ttf
+          x: 120
+          "y": 385
+          size: 10
+          color: black
+mode: single
