@@ -27,17 +27,27 @@ action:
     target:
       entity_id: input_text.todo_helper
     data:
-      value: |
-        {{
-          household["todo.household"]["items"]
-          | map(attribute='summary')
-          | join('|')
-          | trim
-        }}
+      value: >
+        {% set items = household["todo.household"]["items"] %} {{ items[:3] |
+        map(attribute='summary') | join(' | ') }}
+  - service: input_text.set_value
+    target:
+      entity_id: input_text.todo_helper2
+    data:
+      value: >
+        {% set items = household["todo.household"]["items"] %} {{ items[3:6] |
+        map(attribute='summary') | join(' | ') }}
+  - service: input_text.set_value
+    target:
+      entity_id: input_text.todo_helper3
+    data:
+      value: >
+        {% set items = household["todo.household"]["items"] %} {{ items[6:9] |
+        map(attribute='summary') | join(' | ') }}
   - service: open_epaper_link.drawcustom
     target:
       entity_id:
-        - open_epaper_link.XXXXXXXXXXXXX
+        - open_epaper_link.XXXXXXX
     data:
       background: white
       rotate: 90
@@ -58,6 +68,24 @@ action:
           size: 16
           color: black
           start_y: 60
+        - type: multiline
+          value: "{{ states('input_text.todo_helper2') }}"
+          delimiter: "|"
+          font: ppb.ttf
+          offset_y: 28
+          x: 10
+          size: 16
+          color: black
+          start_y: 142
+        - type: multiline
+          value: "{{ states('input_text.todo_helper3') }}"
+          delimiter: "|"
+          font: ppb.ttf
+          offset_y: 28
+          x: 10
+          size: 16
+          color: black
+          start_y: 224
         - type: icon
           value: checkbox-marked-circle-auto-outline
           x: 240
@@ -65,7 +93,7 @@ action:
           size: 60
           color: black
         - type: text
-          value: "Last Update: {{ now().strftime('%d.%m %H:%M') }}"
+          value: "Letztes Update: {{ now().strftime('%d.%m %H:%M') }}"
           font: ppb.ttf
           x: 120
           "y": 385
