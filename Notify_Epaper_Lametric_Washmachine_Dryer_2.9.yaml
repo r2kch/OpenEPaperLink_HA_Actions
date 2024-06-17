@@ -1,0 +1,381 @@
+alias: Action - Waschmaschine and Tumbler
+description: ""
+trigger:
+  - platform: numeric_state
+    entity_id:
+      - sensor.shelly_pm_wascshmaschine_power
+    id: WM-on
+    above: 20
+    alias: WM on
+  - alias: WM off
+    platform: numeric_state
+    entity_id:
+      - sensor.shelly_pm_wascshmaschine_power
+    id: WM-off
+    below: 4
+    for:
+      hours: 0
+      minutes: 3
+      seconds: 0
+  - alias: WM door open
+    platform: state
+    entity_id:
+      - binary_sensor.shelly_b_50fa_window
+    to: "on"
+    id: WM-door-open
+  - alias: WM Helper off
+    platform: state
+    entity_id:
+      - input_boolean.waschmaschine_helper
+    to: "off"
+    id: wm-helper-off
+  - platform: numeric_state
+    entity_id:
+      - sensor.shelly_pm_tumbler_power
+    id: Tumbler-on
+    above: 20
+    alias: Tumbler on
+  - alias: Tumbler off
+    platform: numeric_state
+    entity_id:
+      - sensor.shelly_pm_tumbler_power
+    id: Tumbler-off
+    below: 1.2
+    for:
+      hours: 0
+      minutes: 3
+      seconds: 0
+  - platform: state
+    entity_id:
+      - binary_sensor.shelly_b_fa41_window
+    to: "on"
+    id: tumbler-open
+    alias: Tumbler door open
+  - platform: state
+    entity_id:
+      - input_boolean.tumbler_helper
+    to: "off"
+    id: tumbler-helper-off
+    alias: Tumbler Helper off
+condition: []
+action:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id:
+              - WM-on
+        sequence:
+          - service: homeassistant.turn_on
+            data: {}
+            target:
+              entity_id: input_boolean.waschmaschine_helper
+          - service: homeassistant.turn_on
+            data: {}
+            target:
+              entity_id: input_boolean.waschmaschine_door_helper
+          - service: open_epaper_link.drawcustom
+            target:
+              entity_id: open_epaper_link.XXX
+            data:
+              background: white
+              rotate: 0
+              payload:
+                - type: text
+                  value: Waschmaschine läuft
+                  font: ppb.ttf
+                  x: 25
+                  "y": 10
+                  size: 20
+                  color: black
+                - type: icon
+                  value: washing-machine
+                  x: 103
+                  "y": 30
+                  size: 90
+                  color: black
+            enabled: true
+        alias: WM on
+      - conditions:
+          - condition: and
+            conditions:
+              - condition: trigger
+                id:
+                  - WM-off
+              - condition: state
+                entity_id: input_boolean.waschmaschine_helper
+                state: "on"
+              - condition: state
+                entity_id: input_boolean.waschmaschine_door_helper
+                state: "on"
+        sequence:
+          - service: homeassistant.turn_off
+            target:
+              entity_id: input_boolean.waschmaschine_helper
+            data: {}
+          - service: open_epaper_link.drawcustom
+            target:
+              entity_id: open_epaper_link.XXX
+            data:
+              background: red
+              rotate: 0
+              payload:
+                - type: text
+                  value: Waschmaschine fertig!
+                  font: ppb.ttf
+                  x: 25
+                  "y": 10
+                  size: 20
+                  color: white
+                - type: icon
+                  value: washing-machine-alert
+                  x: 103
+                  "y": 30
+                  size: 90
+                  color: white
+            enabled: true
+        alias: WM off
+      - conditions:
+          - condition: and
+            conditions:
+              - condition: trigger
+                id:
+                  - wm-helper-off
+              - condition: state
+                entity_id: input_boolean.waschmaschine_door_helper
+                state: "on"
+        sequence:
+          - if:
+              - condition: numeric_state
+                entity_id: zone.home
+                above: 0.9
+            then:
+              - repeat:
+                  sequence:
+                    - service: lametric.message
+                      data:
+                        cycles: 1
+                        icon_type: info
+                        priority: info
+                        device_id: MYLAMETRIC
+                        sound: notification2
+                        icon: "1098"
+                        message: Waschmaschine ausräumen
+                    - delay:
+                        hours: 0
+                        minutes: 3
+                        seconds: 0
+                        milliseconds: 0
+                  until:
+                    - condition: state
+                      entity_id: input_boolean.waschmaschine_door_helper
+                      state: "off"
+                enabled: true
+        alias: WM Notification Lametic-Phone
+      - conditions:
+          - condition: and
+            conditions:
+              - condition: trigger
+                id:
+                  - WM-door-open
+              - condition: state
+                entity_id: input_boolean.waschmaschine_door_helper
+                state: "on"
+        sequence:
+          - service: homeassistant.turn_off
+            data: {}
+            target:
+              entity_id: input_boolean.waschmaschine_door_helper
+          - service: homeassistant.turn_off
+            target:
+              entity_id: input_boolean.waschmaschine_helper
+            data: {}
+          - service: open_epaper_link.drawcustom
+            target:
+              entity_id: open_epaper_link.XXX
+            data:
+              background: white
+              rotate: 0
+              payload:
+                - type: text
+                  value: Waschmaschine
+                  font: ppb.ttf
+                  x: 50
+                  "y": 10
+                  size: 20
+                  color: black
+                - type: text
+                  value: wartet auf Arbeit
+                  font: ppb.ttf
+                  x: 50
+                  "y": 50
+                  size: 20
+                  color: black
+                - type: icon
+                  value: sleep
+                  x: 122
+                  "y": 70
+                  size: 50
+                  color: black
+            enabled: true
+        alias: WM reset
+      - conditions:
+          - condition: trigger
+            id:
+              - Tumbler-on
+        sequence:
+          - service: homeassistant.turn_on
+            data: {}
+            target:
+              entity_id: input_boolean.tumbler_helper
+          - service: homeassistant.turn_on
+            data: {}
+            target:
+              entity_id: input_boolean.tumbler_door_helper
+          - service: open_epaper_link.drawcustom
+            target:
+              entity_id: open_epaper_link.YYY
+            data:
+              background: white
+              rotate: 0
+              payload:
+                - type: text
+                  value: Tumbler läuft
+                  font: ppb.ttf
+                  x: 70
+                  "y": 10
+                  size: 20
+                  color: black
+                - type: icon
+                  value: tumble-dryer
+                  x: 103
+                  "y": 30
+                  size: 90
+                  color: black
+            enabled: true
+        alias: Tumbler on
+      - conditions:
+          - condition: and
+            conditions:
+              - condition: trigger
+                id:
+                  - Tumbler-off
+              - condition: state
+                entity_id: input_boolean.tumbler_helper
+                state: "on"
+              - condition: state
+                entity_id: input_boolean.tumbler_door_helper
+                state: "on"
+        sequence:
+          - service: open_epaper_link.drawcustom
+            target:
+              entity_id: open_epaper_link.YYY
+            data:
+              background: red
+              rotate: 0
+              payload:
+                - type: text
+                  value: Tumbler fertig!
+                  font: ppb.ttf
+                  x: 70
+                  "y": 10
+                  size: 20
+                  color: white
+                - type: icon
+                  value: tumble-dryer-alert
+                  x: 103
+                  "y": 30
+                  size: 90
+                  color: white
+            enabled: true
+          - service: homeassistant.turn_off
+            target:
+              entity_id: input_boolean.tumbler_helper
+            data: {}
+        alias: Tumbler off
+      - conditions:
+          - condition: and
+            conditions:
+              - condition: trigger
+                id:
+                  - tumbler-helper-off
+              - condition: state
+                entity_id: input_boolean.tumbler_door_helper
+                state: "on"
+        sequence:
+          - if:
+              - condition: numeric_state
+                entity_id: zone.home
+                above: 0.9
+            then:
+              - repeat:
+                  sequence:
+                    - service: lametric.message
+                      data:
+                        cycles: 1
+                        icon_type: info
+                        priority: info
+                        device_id: MYLAMETRIC
+                        sound: notification2
+                        icon: "1098"
+                        message: Tumbler ausräumen
+                    - delay:
+                        hours: 0
+                        minutes: 3
+                        seconds: 0
+                        milliseconds: 0
+                  until:
+                    - condition: state
+                      entity_id: input_boolean.tumbler_door_helper
+                      state: "off"
+                enabled: true
+        alias: Tumbler Notification Lametic-Phone
+      - conditions:
+          - condition: and
+            conditions:
+              - condition: trigger
+                id:
+                  - tumbler-open
+              - condition: state
+                entity_id: input_boolean.tumbler_door_helper
+                state: "on"
+        sequence:
+          - service: homeassistant.turn_off
+            target:
+              entity_id: input_boolean.tumbler_door_helper
+            data: {}
+          - service: homeassistant.turn_off
+            data: {}
+            target:
+              entity_id: input_boolean.tumbler_helper
+          - service: open_epaper_link.drawcustom
+            target:
+              entity_id: open_epaper_link.YYY
+            data:
+              background: white
+              rotate: 0
+              payload:
+                - type: text
+                  value: Tumbler
+                  font: ppb.ttf
+                  x: 100
+                  "y": 10
+                  size: 20
+                  color: black
+                - type: text
+                  value: wartet auf Arbeit
+                  font: ppb.ttf
+                  x: 50
+                  "y": 50
+                  align: center
+                  size: 20
+                  color: black
+                - type: icon
+                  value: sleep
+                  x: 122
+                  "y": 70
+                  size: 50
+                  color: black
+            enabled: true
+        alias: Tumber reset
+mode: parallel
+max: 20
