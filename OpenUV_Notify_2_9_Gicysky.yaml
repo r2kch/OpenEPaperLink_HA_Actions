@@ -1,0 +1,171 @@
+alias: Notify - OpenUV
+description: Übersicht von UV Daten basierend auf OpenUV Cloud (Original by sgmobiledev)
+trigger: []
+condition: []
+action:
+  - service: open_epaper_link.drawcustom
+    target:
+      entity_id:
+        - open_epaper_link.XXXXX
+    data:
+      background: white
+      payload:
+        - type: text
+          value: UV Status
+          font: ppb.ttf
+          x: 15
+          "y": 10
+          size: 16
+          color: >-
+            {% if states('sensor.openuv_current_uv_level') in ['high',
+            'very_high' , 'extreme'] %}red{% else %}black{% endif %}
+        - type: icon
+          value: update
+          x: 195
+          "y": 5
+          size: 14
+          color: black
+        - type: text
+          value: >-
+            {{ states('sensor.XXXXX_next_checkin') | as_timestamp() |
+            timestamp_custom('%H:%M')}}
+          font: ppb.ttf
+          x: 230
+          "y": 10
+          size: 10
+          color: red
+        - type: text
+          value: Ozonwert
+          font: ppb.ttf
+          x: 200
+          "y": 25
+          size: 12
+        - type: text
+          value: "UV-Level: {{ states('sensor.openuv_current_uv_level') | upper }}"
+          font: ppb.ttf
+          x: 15
+          "y": 35
+          size: 14
+          color: >-
+            {% if states('sensor.openuv_current_uv_level') in ['high',
+            'very_high' , 'extreme'] %}red{% else %}black{% endif %}
+        - type: text
+          value: "Sonnenschutz: Empfohlen"
+          font: ppb.ttf
+          x: 15
+          "y": 60
+          size: 10
+          color: >-
+            {% if states('binary_sensor.openuv_protection_window') in ['on']
+            %}red{% else %}white{% endif %}
+        - type: text
+          value: >-
+            Sonnenzeit M****: {{
+            states('sensor.openuv_skin_type_3_safe_exposure_time') }}min
+          font: ppb.ttf
+          x: 15
+          "y": 85
+          size: 10
+          color: black
+        - type: text
+          value: >-
+            Sonnenzeit S***:      {{
+            states('sensor.openuv_skin_type_2_safe_exposure_time') }}min
+          font: ppb.ttf
+          x: 15
+          "y": 95
+          size: 10
+          color: black
+        - type: icon
+          value: >
+            {% set ozon_wert = states('sensor.openuv_current_ozone_level') |
+            float %}  {% if ozon_wert >= 300.0 %}
+               earth-arrow-right
+            {% else %}
+               earth-off
+            {% endif %}
+          x: 223
+          "y": 35
+          size: 22
+          color: black
+        - type: text
+          value: >
+            {% set ozone_du = states('sensor.openuv_current_ozone_level') |
+            float %} {{ (ozone_du) | round(1) }} DU
+          font: ppb.ttf
+          x: 205
+          "y": 60
+          size: 14
+        - type: text
+          value: >-
+            {{ states('sensor.openuv_current_uv_index') | float | round(0) |
+            string }}
+          font: ppb.ttf
+          x: 220
+          "y": 87
+          size: 28
+        - type: line
+          x_start: 195
+          x_end: 275
+          y_start: 75
+          y_end: 75
+          width: 2
+          fill: red
+        - type: rectangle
+          x_start: 195
+          x_end: 275
+          y_start: 20
+          y_end: 120
+          width: 2
+          fill: null
+          outline: black
+        - type: icon
+          value: >
+            {% set uv_wert = states('sensor.openuv_current_uv_index') | string
+            %} {% if uv_wert == 'low' %}
+              alpha-l-circle-outline
+            {% elif uv_wert == 'moderate' %}
+              alpha-m-circle-outline
+            {% elif uv_wert == 'high' %}
+              alpha-h-circle-outline
+            {% elif uv_wert == 'very_high' %}
+              alpha-v-circle-outline
+            {% elif uv_wert == 'extreme' %}
+              alpha-w-circle-outline
+            {% else %}
+               info
+            {% endif %}
+          x: 200
+          "y": 90
+          size: 20
+          color: black
+        - type: icon
+          value: >
+            {% set uv_index = states('sensor.openuv_current_uv_index') | float |
+            round(0) %} {% if uv_index >= 1 and uv_index < 3 %}
+              sun-snowflake-variant
+            {% elif uv_index >= 3 and uv_index < 6 %}
+              weather-sunny
+            {% elif uv_index >= 6 and uv_index < 8 %}
+              sun-thermometer
+            {% elif uv_index >= 8 and uv_index < 11 %}
+              white-balance-sunny
+            {% elif uv_index == 11 %}
+              weather-sunny-alert
+            {% else %}
+               info
+            {% endif %}
+          x: 235
+          "y": 80
+          size: 40
+          color: red
+        - type: icon
+          value: >
+            {{ 'battery-100' if is_state('sensor.XXXX_battery', '100') else
+            'battery-50' }}
+          x: 280
+          "y": 5
+          size: 14
+          color: |
+            {{ 'black' if is_state('sensor.XXXX_battery', '100') else 'red' }}
+mode: single
